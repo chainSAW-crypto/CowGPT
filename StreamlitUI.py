@@ -1,3 +1,4 @@
+import streamlit as st
 def run_query(question):
     query = f"""
     SELECT snowflake.cortex.complete(
