@@ -1,4 +1,22 @@
 import streamlit as st
+import snowflake.connector
+
+def create_session():
+    try:
+        conn = snowflake.connector.connect(
+            user="WOLF",
+            password= SNOWFLAKE_PASSWORD,
+            account="XTHIBWJ.CCB11848",
+            warehouse="COMPUTE_WH",
+            database="METHANEGPT",
+            schema="PUBLIC"
+        )
+        return conn
+    except Exception as e:
+        st.error(f"Failed to connect to Snowflake: {e}")
+        return None
+
+
 def run_query(question):
     query = f"""
     SELECT snowflake.cortex.complete(
