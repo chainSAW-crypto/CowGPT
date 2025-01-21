@@ -4,13 +4,12 @@ import snowflake.connector
 def create_session():
     try:
         conn = snowflake.connector.connect(
-            user="WOLF",
-            password= SNOWFLAKE_PASSWORD,
-            account="kdb70594.us-east-1",
-            warehouse="COMPUTE_WH",
-            database="METHANEGPT",
-            schema="PUBLIC"
-        )
+        user=st.secrets["snowflake"]["user"],
+        password=st.secrets["snowflake"]["password"],
+        account=st.secrets["snowflake"]["account"],
+        warehouse=st.secrets["snowflake"]["warehouse"],
+        database=st.secrets["snowflake"]["database"]
+    )
         return conn
     except Exception as e:
         st.error(f"Failed to connect to Snowflake: {e}")
