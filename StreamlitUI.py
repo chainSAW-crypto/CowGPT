@@ -5,8 +5,8 @@ def create_session():
     try:
         conn = snowflake.connector.connect(
             user="WOLF",
-            password= SNOWFLAKE_PASSWORD,
-            account="XTHIBWJ.CCB11848",
+            password= "SNOWFLAKE_PASSWORD",
+            account="XTHIBWJ.kdb70594.us-east-1",
             warehouse="COMPUTE_WH",
             database="METHANEGPT",
             schema="PUBLIC"
@@ -17,7 +17,8 @@ def create_session():
         return None
 
 
-def run_query(question):
+# Function to run query
+def run_query(session, question):
     query = f"""
     SELECT snowflake.cortex.complete(
         'mistral-large2',
@@ -37,11 +38,16 @@ def run_query(question):
         )
     ) as response
     """
-    result = session.sql(query).collect()
-    return result[0]["RESPONSE"] if result else "No response generated."
+    try:
+        cursor = session.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result[0][0] if result else "No response generated."
+    except Exception as e:
+        st.error(f"Query execution failed: {e}")
+        return None
 
 # Set up the Streamlit UI
-
 st.title("🌱 MethaneGPT Chat 🐄")
 st.write(""""Methane is a potent greenhouse gas, contributing significantly to global warming. 🌍 It has over 80 times the warming power of carbon dioxide over 20 years. Tackling methane emissions is crucial to mitigate climate change. 🌡️
 Learn more about these problems, their associated risks, and how, from a farmer's perspective, you can adopt healthy, profitable agricultural 🌾 and cattle-rearing 🐮 practices to address this issue. 💡 """)
@@ -50,17 +56,23 @@ Learn more about these problems, their associated risks, and how, from a farmer'
 st.subheader("Ask your question")
 user_question = st.text_input("Enter your question below:", placeholder="Type your question here...")
 
+# Establish Snowflake session
+session = create_session()
+
 # Add a button to submit the question
 if st.button("Submit"):
     if user_question.strip():
-        with st.spinner("Fetching response..."):
-            try:
-                response = run_query(user_question)
-                st.success("Response received!")
-                st.subheader("Response:")
-                st.write(response)
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+        if session:
+            with st.spinner("Fetching response..."):
+                response = run_query(session, user_question)
+                if response:
+                    st.success("Response received!")
+                    st.subheader("Response:")
+                    st.write(response)
+                else:
+                    st.warning("No response generated.")
+        else:
+            st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
     else:
         st.warning("Please enter a valid question.")
 
