@@ -5,8 +5,8 @@ def create_session():
     try:
         conn = snowflake.connector.connect(
             user="WOLF",
-            password= "SNOWFLAKE_PASSWORD",
-            account="XTHIBWJ.kdb70594.us-east-1",
+            password= SNOWFLAKE_PASSWORD,
+            account="kdb70594.us-east-1",
             warehouse="COMPUTE_WH",
             database="METHANEGPT",
             schema="PUBLIC"
