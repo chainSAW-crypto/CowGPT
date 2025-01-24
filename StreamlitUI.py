@@ -22,7 +22,7 @@ def run_query(session, question):
     SELECT snowflake.cortex.complete(
         'mistral-large2',
         CONCAT(
-            'Answer the question based on the provided context. Provide answer relevant to provided context. ',
+            'Answer the question based on the provided context. Provide answer relevant to provided context. keep the discussins only related to given topic, if you can't find the context don't answer. ',
             'Context:',
             (
                 select listagg(chunk[0],' ') from (SELECT CHUNK from MethaneGPT.PUBLIC.METHANERAGRESULTS
