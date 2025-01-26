@@ -192,7 +192,7 @@ def execute_from_pdf():
         return
 
     st.success("PDF processed successfully!")
-    
+    st.write(text)
     if user_question:
         if session:
             with st.spinner("Fetching response..."):
