@@ -72,17 +72,7 @@ FROM combined_context;
 
 
 def run_pdf_query(question, text):
-    query1 = f"""
-    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-    SELECT
-        '{text}' AS TEXT_CONTENT,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-            'snowflake-arctic-embed-m', 
-            '{text}'
-        ) AS EMBEDDING_VECTOR;
-    """
-    
-    query2 = f"""
+    query = f"""
     WITH QUESTION_EMBEDDING AS (
       SELECT
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
@@ -122,8 +112,17 @@ FROM COMBINED_CONTEXT;
     
     try:
         cursor = session.cursor()
-        cursor.execute(query1)  
-        cursor.execute(query2)
+        cursor.execute(f"""
+    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
+    SELECT
+        '{text}' AS TEXT_CONTENT,
+        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+            'snowflake-arctic-embed-m', 
+            '{text}'
+        ) AS EMBEDDING_VECTOR;
+        
+        """)  
+        cursor.execute(query)
         
         result = cursor.fetchall()
         return result[0][0] if result else "No response generated."
