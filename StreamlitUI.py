@@ -81,7 +81,7 @@ def run_pdf_query(session, question, text):
         '{text}' AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            {text}
+            '{text}'
         ) AS EMBEDDING_VECTOR;
     """
     
@@ -115,7 +115,7 @@ SELECT
     CONCAT(
       'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: {question}',
+      '\nQuestion: ', '{question}',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
