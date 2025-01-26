@@ -91,7 +91,6 @@ def insert_pdf_info(session, text):
         
 def get_results(session, question):
     clean_question = question.replace("'", "''").strip()
-    st.write("Fetching answer from the provided pdf file")
     query = f"""
     WITH
 question_embedding AS (
@@ -121,7 +120,8 @@ SELECT
   SNOWFLAKE.CORTEX.COMPLETE(
     'mistral-large2',
     CONCAT(
-      'You are a smart llm with the purpose of resolving user queries. ',
+      'you are a smart llm with the purpose of resolving user queries. You take the provided scientific context from document base into the account and
+Answer the question based on the context. You also provide data-drive insights if available. You Provide answer relevant to provided context only. if context does not match to the question no answer should be provided. Also mention the source documents in the answer and elaborate each point to fulfil user understanding. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
       '\nQuestion: {clean_question}',
       '\nAnswer concisely with bullet points:'
@@ -131,6 +131,7 @@ SELECT
 FROM COMBINED_CONTEXT;
 """
     cursor.execute(query)     
+    st.write("Fetching answer from the provided pdf file")
     result = cursor.fetchall()
     return result[0][0] if result else "No response generated."
 
