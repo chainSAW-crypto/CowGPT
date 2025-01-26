@@ -70,18 +70,18 @@ FROM combined_context;
         return None
 
 
-def run_pdf_query(session, question, text):
+def run_pdf_query(question, text):
     # Create cursor inside the function
     cursor = session.cursor()
     
     # Use parameterized queries to prevent SQL injection
-    query1 = """
+    query1 = f"""
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
-        :text_content AS TEXT_CONTENT,
+        '{text}' AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            :text_embedding
+            '{text}'
         ) AS EMBEDDING_VECTOR;
     """
     
@@ -125,7 +125,7 @@ FROM COMBINED_CONTEXT;
 
     try:
         # Execute first query with parameters
-        cursor.execute(query1, {'text_content': text, 'text_embedding': text})
+        cursor.execute(query1)
         # Execute second query with parameters
         cursor.execute(query2)
         # Fetch results
@@ -201,7 +201,7 @@ def execute_from_pdf():
     if user_question.strip():
         if session:
             with st.spinner("Fetching response..."):
-                response = run_pdf_query(session, text, user_question)
+                response = run_pdf_query(user_question, text)
                 if response:
                     st.success("Response received!")
                     st.subheader("Response:")
