@@ -164,14 +164,25 @@ def execute_response():
 
 
 def execute_from_pdf():
-    file_contents = uploaded_file.read()
-    pdf_reader = PdfReader(uploaded_file)
+    try:
+        # Reset the file pointer to the beginning
+        uploaded_file.seek(0)
+        pdf_reader = PdfReader(uploaded_file)
+    except PyPDF2.errors.PdfReadError:
+        st.error("Invalid PDF file. Please upload a valid PDF.")
+        return
+    except Exception as e:
+        st.error(f"Error reading PDF: {str(e)}")
+        return
 
-        # Extract text from each page
+    # Extract text from each page
     text = ""
     for page in pdf_reader.pages:
-        text += page.extract_text()
-    st.write("File uploaded successfully!")
+        text += page.extract_text() or ""  # Handle `None` returns
+    
+    if not text.strip():
+        st.error("No text could be extracted from the PDF.")
+        return
     
     if user_question.strip():
         if session:
@@ -184,8 +195,8 @@ def execute_from_pdf():
                 else:
                     st.warning("No response generated.")
         else:
-            st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
-            
+            st.error("Snowflake connection error. Check credentials.")
+
 if uploaded_file is not None:
     execute_from_pdf()
 else:
