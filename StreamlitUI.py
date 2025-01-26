@@ -89,8 +89,8 @@ def run_pdf_query(question, text):
 WITH QUESTION_EMBEDDING AS (
   SELECT
     SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-      'snowflake-arctic-embed-m',
-      '{question}'
+      'snowflake-arctic-embed-m,
+      {question}'
     ) AS QUESTION_VECTOR
 ),
 RANKED_TEXT AS (
