@@ -127,11 +127,12 @@ def run_pdf_query(question, text):
                 'text_content': text, 
                 'text_embedding': text
             })
-            result = cursor.execute(query2, {
+            cursor.execute(query2, {
                 'question_param': question, 
                 'question_para': question
             })
             
+            result = cursor.execute(query2).fetchone()
             cursor.close()
             
             return result[0] if result else "No response generated."
