@@ -70,23 +70,26 @@ FROM combined_context;
 
 
 def run_pdf_query(session, question, text):
-    query1 = f""" 
+    # Create cursor inside the function
+    cursor = session.cursor()
+    
+    # Use parameterized queries to prevent SQL injection
+    query1 = """
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-          SELECT
-        '{text}' AS TEXT_CONTENT,
+    SELECT
+        %s AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            '{text}'
-        ) AS EMBEDDING_VECTOR; 
-        """
-
-    query2 = f"""
-WITH
-QUESTION_EMBEDDING AS (
+            %s
+        ) AS EMBEDDING_VECTOR;
+    """
+    
+    query2 = """
+WITH QUESTION_EMBEDDING AS (
   SELECT
     SNOWFLAKE.CORTEX.EMBED_TEXT_768(
       'snowflake-arctic-embed-m',
-      '{user_question}'
+      %s
     ) AS QUESTION_VECTOR
 ),
 RANKED_TEXT AS (
@@ -96,7 +99,7 @@ RANKED_TEXT AS (
   FROM input_pdf_embedding_store, QUESTION_EMBEDDING
   WHERE TEXT_CONTENT IS NOT NULL
   ORDER BY SIMILARITY ASC
-  LIMIT 10  -- Get top 10 relevant text chunks
+  LIMIT 10
 ),
 COMBINED_CONTEXT AS (
   SELECT
@@ -108,29 +111,38 @@ COMBINED_CONTEXT AS (
 SELECT
   SNOWFLAKE.CORTEX.COMPLETE(
     'mistral-large2',
-    CONCAT('you are a smart llm with the purpose of resolving user queries. You take the provided scientific context from document base into the account and
-Answer the question based on the context. You also provide data-drive insights if available. You Provide answer relevant to provided context only. if context does not match to the question no answer should be provided.', 
+    CONCAT(
+      'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: {user_question}',
+      '\nQuestion: %s',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
-FROM COMBINED_CONTEXT;     
-
-"""
+FROM COMBINED_CONTEXT;
+    """
 
     try:
-        cursor.query(query1)
-        cursor.execute(query2)
+        # Execute first query with parameters
+        cursor.execute(query1, (text, text))
+        # Execute second query with parameters
+        cursor.execute(query2, (question, question))
+        # Fetch results
         result = cursor.fetchall()
+        # Close cursor
+        cursor.close()
+        
         return result[0][0] if result else "No response generated."
         
-    except Exception as e:
-        st.error(f"Query execution failed: {e}")
+    except snowflake.connector.errors.ProgrammingError as e:
+        st.error(f"SQL Error: {str(e)}")
         return None
-    
-
+    except Exception as e:
+        st.error(f"Unexpected Error: {str(e)}")
+        return None
+    finally:
+        if 'cursor' in locals() and cursor is not None:
+            cursor.close()
     
 
 # Set up the Streamlit UI
@@ -146,8 +158,6 @@ st.write("Upload pdf to fetch the specific answer")
 uploaded_file = st.file_uploader("Choose a document", type=["pdf", "docx"])
 
 # Establish Snowflake session
-session = create_session()
-cursor = session.cursor()
 
 def execute_response():
     if user_question.strip():
