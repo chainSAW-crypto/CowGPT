@@ -113,7 +113,7 @@ def run_pdf_query(question, text):
         CONCAT(
           'You are a smart llm with the purpose of resolving user queries. ',
           'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-          '\nQuestion: {question}',
+          '\nQuestion: :question_para',
           '\nAnswer concisely with bullet points:'
         )
       ) AS ANSWER,
@@ -127,14 +127,14 @@ def run_pdf_query(question, text):
                 'text_content': text, 
                 'text_embedding': text
             })
-            cursor.execute(query2, {
-                'question_param': question
+            result = cursor.execute(query2, {
+                'question_param': question, 
+                'question_para': question
             })
             
-            result = cursor.fetchall()
             cursor.close()
             
-            return result[0][0] if result else "No response generated."
+            return result[0] if result else "No response generated."
             
         except Exception as e:
             st.error(f"Error: {str(e)}")
