@@ -71,8 +71,27 @@ FROM combined_context;
 
 
 
-def run_pdf_query(question, text):
+def insert_pdf_info(session, text):
+    try:
+        cursor = session.cursor()
+        cursor.execute(f"""
+    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
+    SELECT
+        '{text}' AS TEXT_CONTENT,
+        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+            'snowflake-arctic-embed-m', 
+            '{text}'
+        ) AS EMBEDDING_VECTOR;
+        
+        """)  
+        st.write("Text embedding created")
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+        return None
+        
+def get_results(session, question):
     clean_question = question.replace("'", "''").strip()
+    st.write("Fetching answer from the provided pdf file")
     query = f"""
     WITH
 question_embedding AS (
@@ -111,28 +130,11 @@ SELECT
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
 FROM COMBINED_CONTEXT;
 """
-    
-    try:
-        cursor = session.cursor()
-        cursor.execute(f"""
-    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-    SELECT
-        '{text}' AS TEXT_CONTENT,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-            'snowflake-arctic-embed-m', 
-            '{text}'
-        ) AS EMBEDDING_VECTOR;
-        
-        """)  
-        cursor.execute(query)
-        
-        result = cursor.fetchall()
-        return result[0][0] if result else "No response generated."
-        
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        return None
-        
+    cursor.execute(query)     
+    result = cursor.fetchall()
+    return result[0][0] if result else "No response generated."
+
+
 
 # Set up the Streamlit UI
 st.title("🌱 MethaneGPT Chat 🐄")
@@ -189,7 +191,8 @@ def execute_from_pdf():
     if user_question.strip():
         if session:
             with st.spinner("Fetching response..."):
-                response = run_pdf_query(user_question, text)
+                insert_pdf_info(session, text)
+                response = get_results(session, question)
                 if response:
                     st.success("Response received!")
                     st.subheader("Response:")
