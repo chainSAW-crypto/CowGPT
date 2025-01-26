@@ -1,6 +1,6 @@
 import streamlit as st
 import snowflake.connector
-from PyPDF2 import PdfReader
+import PyPDF2
 from io import BytesIO
 
 def create_session():
