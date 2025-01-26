@@ -186,10 +186,10 @@ if uploaded_file is not None:
         else:
             st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
 
-
-    
+# Empty the table after session end
+cursor.execute("""
+TRUNCATE TABLE input_pdf_embedding_store;
 """)
-
 
 # Optionally, display information or instructions
 st.sidebar.title("About this App")
