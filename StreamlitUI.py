@@ -75,22 +75,22 @@ def run_pdf_query(session, question, text):
     cursor = session.cursor()
     
     # Use parameterized queries to prevent SQL injection
-    query1 = """
+    query1 = f"""
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
-        %s AS TEXT_CONTENT,
+        '{text}' AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            %s
+            {text}
         ) AS EMBEDDING_VECTOR;
     """
     
-    query2 = """
+    query2 = f"""
 WITH QUESTION_EMBEDDING AS (
   SELECT
     SNOWFLAKE.CORTEX.EMBED_TEXT_768(
       'snowflake-arctic-embed-m',
-      %s
+      '{question}'
     ) AS QUESTION_VECTOR
 ),
 RANKED_TEXT AS (
@@ -115,7 +115,7 @@ SELECT
     CONCAT(
       'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: %s',
+      '\nQuestion: {question}',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
@@ -125,9 +125,9 @@ FROM COMBINED_CONTEXT;
 
     try:
         # Execute first query with parameters
-        cursor.execute(query1, (text, text))
+        cursor.execute(query1)
         # Execute second query with parameters
-        cursor.execute(query2, (question, question))
+        cursor.execute(query2)
         # Fetch results
         result = cursor.fetchall()
         # Close cursor
