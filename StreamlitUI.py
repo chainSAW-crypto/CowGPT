@@ -74,14 +74,17 @@ FROM combined_context;
 def insert_pdf_info(session, text):
     try:
         cursor = session.cursor()
+        safe_text = text.replace("'", "''")
+
+# Use `safe_text` in your query
         query = f"""
-    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-    SELECT
-        '{text}' AS TEXT_CONTENT,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-            'snowflake-arctic-embed-m', 
-            '{text}'
-        ) AS EMBEDDING_VECTOR;
+            INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
+            SELECT
+                '{safe_text}' AS TEXT_CONTENT,
+                SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+                    'snowflake-arctic-embed-m', 
+                    '{safe_text}'
+                ) AS EMBEDDING_VECTOR;
         """
         cursor.execute(query)
         st.write("Text embeddings created")
