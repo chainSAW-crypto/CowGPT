@@ -164,7 +164,7 @@ def execute_response():
 
 
 def execute_from_pdf():
-        try:
+    try:
         # Read the file into a BytesIO buffer
         file_bytes = BytesIO(uploaded_file.getvalue())  # Use .getvalue() instead of .read()
         pdf_reader = PyPDF2.PdfReader(file_bytes)
