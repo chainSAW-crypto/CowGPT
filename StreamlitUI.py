@@ -74,12 +74,13 @@ FROM combined_context;
 def run_pdf_query(question, text):
     clean_question = question.replace("'", "''").strip()
     query = f"""
-    WITH QUESTION_EMBEDDING AS (
-      SELECT
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-          'snowflake-arctic-embed-m',
-          '{clean_question}'
-        ) AS QUESTION_VECTOR
+    WITH
+question_embedding AS (
+  SELECT
+    SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+      'snowflake-arctic-embed-m',
+      '{question}'
+    ) AS question_vector
     ),
    RANKED_TEXT AS (
       SELECT
