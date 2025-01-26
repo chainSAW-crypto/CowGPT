@@ -73,73 +73,73 @@ FROM combined_context;
 def run_pdf_query(question, text):
     # Create cursor inside the function
     def run_pdf_query(question, text):
-    query1 = """
-    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-    SELECT
-        :text_content AS TEXT_CONTENT,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-            'snowflake-arctic-embed-m', 
-            :text_embedding
-        ) AS EMBEDDING_VECTOR;
-    """
-    
-    query2 = """
-    WITH QUESTION_EMBEDDING AS (
+        query1 = """
+        INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
+        SELECT
+            :text_content AS TEXT_CONTENT,
+            SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+                'snowflake-arctic-embed-m', 
+                :text_embedding
+            ) AS EMBEDDING_VECTOR;
+        """
+        
+        query2 = """
+        WITH QUESTION_EMBEDDING AS (
+          SELECT
+            SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+              'snowflake-arctic-embed-m',
+              :question_param
+            ) AS QUESTION_VECTOR
+        ),
+       RANKED_TEXT AS (
       SELECT
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-          'snowflake-arctic-embed-m',
-          :question_param
-        ) AS QUESTION_VECTOR
-    ),
-   RANKED_TEXT AS (
-  SELECT
-    TEXT_CONTENT,
-    VECTOR_L2_DISTANCE(EMBEDDING_VECTOR, QUESTION_VECTOR) AS SIMILARITY
-  FROM input_pdf_embedding_store, QUESTION_EMBEDDING
-  WHERE TEXT_CONTENT IS NOT NULL
-  ORDER BY SIMILARITY ASC
-  LIMIT 10
-),
-COMBINED_CONTEXT AS (
-  SELECT
-    LISTAGG(TEXT_CONTENT, '\n') WITHIN GROUP (
+        TEXT_CONTENT,
+        VECTOR_L2_DISTANCE(EMBEDDING_VECTOR, QUESTION_VECTOR) AS SIMILARITY
+      FROM input_pdf_embedding_store, QUESTION_EMBEDDING
+      WHERE TEXT_CONTENT IS NOT NULL
       ORDER BY SIMILARITY ASC
-    ) AS FULL_CONTEXT
-  FROM RANKED_TEXT
-)
-SELECT
-  SNOWFLAKE.CORTEX.COMPLETE(
-    'mistral-large2',
-    CONCAT(
-      'You are a smart llm with the purpose of resolving user queries. ',
-      'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: {question}',
-      '\nAnswer concisely with bullet points:'
+      LIMIT 10
+    ),
+    COMBINED_CONTEXT AS (
+      SELECT
+        LISTAGG(TEXT_CONTENT, '\n') WITHIN GROUP (
+          ORDER BY SIMILARITY ASC
+        ) AS FULL_CONTEXT
+      FROM RANKED_TEXT
     )
-  ) AS ANSWER,
-  (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
-FROM COMBINED_CONTEXT;
-"""
-    
-    try:
-        cursor = session.cursor()
-        cursor.execute(query1, {
-            'text_content': text, 
-            'text_embedding': text
-        })
-        cursor.execute(query2, {
-            'question_param': question
-        })
+    SELECT
+      SNOWFLAKE.CORTEX.COMPLETE(
+        'mistral-large2',
+        CONCAT(
+          'You are a smart llm with the purpose of resolving user queries. ',
+          'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
+          '\nQuestion: {question}',
+          '\nAnswer concisely with bullet points:'
+        )
+      ) AS ANSWER,
+      (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
+    FROM COMBINED_CONTEXT;
+    """
         
-        result = cursor.fetchall()
-        cursor.close()
+        try:
+            cursor = session.cursor()
+            cursor.execute(query1, {
+                'text_content': text, 
+                'text_embedding': text
+            })
+            cursor.execute(query2, {
+                'question_param': question
+            })
+            
+            result = cursor.fetchall()
+            cursor.close()
+            
+            return result[0][0] if result else "No response generated."
+            
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+            return None
         
-        return result[0][0] if result else "No response generated."
-        
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        return None
-    
 
 # Set up the Streamlit UI
 st.title("🌱 MethaneGPT Chat 🐄")
