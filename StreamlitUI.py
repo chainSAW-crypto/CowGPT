@@ -60,7 +60,6 @@ Answer the question based on the context. You also provide data-drive insights i
 FROM combined_context;
     """
     try:
-        cursor = session.cursor()
         cursor.execute(query)
         result = cursor.fetchall()
         return result[0][0] if result else "No response generated."
@@ -119,9 +118,8 @@ Answer the question based on the context. You also provide data-drive insights i
 FROM COMBINED_CONTEXT;     
 
 """
-    cursor = session.cursor()
+
     try:
-        cursor = session.cursor()
         cursor.query(query1)
         cursor.execute(query2)
         result = cursor.fetchall()
@@ -148,6 +146,7 @@ uploaded_file = st.file_uploader("Choose a document", type=["pdf", "docx"])
 
 # Establish Snowflake session
 session = create_session()
+cursor = session.cursor()
 
 # Add a button to submit the question
 if button:
@@ -192,9 +191,8 @@ if uploaded_file is not None:
             st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
 
 
-empty_query = """TRUNCATE TABLE input_pdf_embedding_store;"""
 # Empty the table after session end
-cursor.execute(empty_query)
+cursor.execute("""TRUNCATE TABLE input_pdf_embedding_store;""")
 
 # Optionally, display information or instructions
 st.sidebar.title("About this App")
