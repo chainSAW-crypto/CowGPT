@@ -164,10 +164,10 @@ def execute_response():
 
 
 def execute_from_pdf():
-    try:
-        # Reset the file pointer to the beginning
-        uploaded_file.seek(0)
-        pdf_reader = PdfReader(uploaded_file)
+        try:
+        # Read the file into a BytesIO buffer
+        file_bytes = BytesIO(uploaded_file.getvalue())  # Use .getvalue() instead of .read()
+        pdf_reader = PyPDF2.PdfReader(file_bytes)
     except PyPDF2.errors.PdfReadError:
         st.error("Invalid PDF file. Please upload a valid PDF.")
         return
@@ -175,14 +175,16 @@ def execute_from_pdf():
         st.error(f"Error reading PDF: {str(e)}")
         return
 
-    # Extract text from each page
+    # Extract text from pages
     text = ""
     for page in pdf_reader.pages:
-        text += page.extract_text() or ""  # Handle `None` returns
+        text += page.extract_text() or ""  # Handle None returns
     
     if not text.strip():
-        st.error("No text could be extracted from the PDF.")
+        st.error("No text extracted from the PDF.")
         return
+
+    st.success("PDF processed successfully!")
     
     if user_question.strip():
         if session:
