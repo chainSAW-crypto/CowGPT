@@ -211,10 +211,11 @@ def execute_from_pdf():
         else:
             st.error("Snowflake connection error. Check credentials.")
 
-if uploaded_file is not None:
-    execute_from_pdf()
-else:
-    execute_response()
+if button:
+    if uploaded_file is not None :
+        execute_from_pdf()
+    else:
+        execute_response()
 
 # Empty the table after session end
 cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
