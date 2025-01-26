@@ -72,28 +72,26 @@ FROM combined_context;
 
 def run_pdf_query(question, text):
     # Create cursor inside the function
-    cursor = session.cursor()
-    
-    # Use parameterized queries to prevent SQL injection
-    query1 = f"""
+    def run_pdf_query(question, text):
+    query1 = """
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
-        '{text}' AS TEXT_CONTENT,
+        :text_content AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            '{text}'
+            :text_embedding
         ) AS EMBEDDING_VECTOR;
     """
     
-    query2 = f"""
-WITH QUESTION_EMBEDDING AS (
-  SELECT
-    SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-      'snowflake-arctic-embed-m,
-      {question}'
-    ) AS QUESTION_VECTOR
-),
-RANKED_TEXT AS (
+    query2 = """
+    WITH QUESTION_EMBEDDING AS (
+      SELECT
+        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+          'snowflake-arctic-embed-m',
+          :question_param
+        ) AS QUESTION_VECTOR
+    ),
+   RANKED_TEXT AS (
   SELECT
     TEXT_CONTENT,
     VECTOR_L2_DISTANCE(EMBEDDING_VECTOR, QUESTION_VECTOR) AS SIMILARITY
@@ -122,28 +120,25 @@ SELECT
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
 FROM COMBINED_CONTEXT;
 """
-
+    
     try:
-        # Execute first query with parameters
-        cursor.execute(query1)
-        # Execute second query with parameters
-        cursor.execute(query2)
-        # Fetch results
+        cursor = session.cursor()
+        cursor.execute(query1, {
+            'text_content': text, 
+            'text_embedding': text
+        })
+        cursor.execute(query2, {
+            'question_param': question
+        })
+        
         result = cursor.fetchall()
-        # Close cursor
         cursor.close()
         
         return result[0][0] if result else "No response generated."
         
-    except snowflake.connector.errors.ProgrammingError as e:
-        st.error(f"SQL Error: {str(e)}")
-        return None
     except Exception as e:
-        st.error(f"Unexpected Error: {str(e)}")
+        st.error(f"Error: {str(e)}")
         return None
-    finally:
-        if 'cursor' in locals() and cursor is not None:
-            cursor.close()
     
 
 # Set up the Streamlit UI
