@@ -192,7 +192,7 @@ if uploaded_file is not None:
 
 
 # Empty the table after session end
-cursor.execute("""TRUNCATE TABLE input_pdf_embedding_store;""")
+cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
 
 # Optionally, display information or instructions
 st.sidebar.title("About this App")
