@@ -192,7 +192,7 @@ def execute_from_pdf():
         if session:
             with st.spinner("Fetching response..."):
                 insert_pdf_info(session, text)
-                response = get_results(session, question)
+                response = get_results(session, user_question)
                 if response:
                     st.success("Response received!")
                     st.subheader("Response:")
