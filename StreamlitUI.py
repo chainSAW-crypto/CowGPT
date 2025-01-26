@@ -72,23 +72,24 @@ FROM combined_context;
 
 
 def run_pdf_query(question, text):
+    clean_question = question.replace("'", "''").strip()
     query = f"""
     WITH QUESTION_EMBEDDING AS (
       SELECT
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
           'snowflake-arctic-embed-m',
-          '{question}'
+          '{clean_question}'
         ) AS QUESTION_VECTOR
     ),
    RANKED_TEXT AS (
-  SELECT
-    TEXT_CONTENT,
-    VECTOR_L2_DISTANCE(EMBEDDING_VECTOR, QUESTION_VECTOR) AS SIMILARITY
-  FROM input_pdf_embedding_store, QUESTION_EMBEDDING
-  WHERE TEXT_CONTENT IS NOT NULL
-  ORDER BY SIMILARITY ASC
-  LIMIT 10
-),
+      SELECT
+        TEXT_CONTENT,
+        VECTOR_L2_DISTANCE(EMBEDDING_VECTOR, QUESTION_VECTOR) AS SIMILARITY
+      FROM input_pdf_embedding_store, QUESTION_EMBEDDING
+      WHERE TEXT_CONTENT IS NOT NULL
+      ORDER BY SIMILARITY ASC
+      LIMIT 10
+    ),
 COMBINED_CONTEXT AS (
   SELECT
     LISTAGG(TEXT_CONTENT, '\n') WITHIN GROUP (
@@ -102,7 +103,7 @@ SELECT
     CONCAT(
       'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: {question}',
+      '\nQuestion: {clean_question}',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
@@ -184,7 +185,7 @@ def execute_from_pdf():
 
     st.success("PDF processed successfully!")
     # st.write(text)
-    if user_question:
+    if user_question.strip():
         if session:
             with st.spinner("Fetching response..."):
                 response = run_pdf_query(user_question, text)
