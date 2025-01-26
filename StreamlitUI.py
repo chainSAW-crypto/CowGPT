@@ -68,8 +68,19 @@ FROM combined_context;
         st.error(f"Query execution failed: {e}")
         return None
 
-def run_pdf_query(Session, question):
-    query = """
+
+def run_pdf_query(session, question, text):
+    query1 = """ 
+    INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
+          SELECT
+        '{text}' AS TEXT_CONTENT,
+        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+            'snowflake-arctic-embed-m', 
+            '{text}'
+        ) AS EMBEDDING_VECTOR; 
+        """
+
+    query2 = """
 WITH
 QUESTION_EMBEDDING AS (
   SELECT
@@ -106,19 +117,14 @@ Answer the question based on the context. You also provide data-drive insights i
   ) AS ANSWER,
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
 FROM COMBINED_CONTEXT;     
-            """
+
+"""
     cursor = session.cursor()
     cursor.execute()
     try:
         cursor = session.cursor()
-        cursor.query(""" INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
-          SELECT
-        '{text}' AS TEXT_CONTENT,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768(
-            'snowflake-arctic-embed-m', 
-            '{text}'
-        ) AS EMBEDDING_VECTOR; """)
-        cursor.execute(query)
+        cursor.query(query1)
+        cursor.execute(query2)
         result = cursor.fetchall()
         return result[0][0] if result else "No response generated."
         
@@ -176,7 +182,7 @@ if uploaded_file is not None:
     if user_question.strip():
         if session:
             with st.spinner("Fetching response..."):
-                response = run_pdf_query(session, user_question)
+                response = run_pdf_query(session, text, user_question)
                 if response:
                     st.success("Response received!")
                     st.subheader("Response:")
