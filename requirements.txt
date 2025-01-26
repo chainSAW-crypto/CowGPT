@@ -2,5 +2,4 @@ snowflake-connector-python
 streamlit
 pyarrow
 cffi>=1.9
-PyPDF2
-io
+pypdf2
