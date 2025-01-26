@@ -70,7 +70,7 @@ FROM combined_context;
 
 
 def run_pdf_query(session, question, text):
-    query1 = """ 
+    query1 = f""" 
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
           SELECT
         '{text}' AS TEXT_CONTENT,
@@ -80,7 +80,7 @@ def run_pdf_query(session, question, text):
         ) AS EMBEDDING_VECTOR; 
         """
 
-    query2 = """
+    query2 = f"""
 WITH
 QUESTION_EMBEDDING AS (
   SELECT
