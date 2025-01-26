@@ -74,7 +74,7 @@ FROM combined_context;
 def insert_pdf_info(session, text):
     try:
         cursor = session.cursor()
-        cursor.execute(f"""
+        query = f"""
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
         '{text}' AS TEXT_CONTENT,
@@ -82,9 +82,10 @@ def insert_pdf_info(session, text):
             'snowflake-arctic-embed-m', 
             '{text}'
         ) AS EMBEDDING_VECTOR;
+        """
+        cursor.execute(query)
+        st.write("Text embeddings created")
         
-        """)  
-        st.write("Text embedding created")
     except Exception as e:
         st.error(f"Error: {str(e)}")
         return None
@@ -129,6 +130,7 @@ Answer the question based on the context. You also provide data-drive insights i
   ) AS ANSWER,
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
 FROM COMBINED_CONTEXT;
+
 """
     cursor.execute(query)     
     st.write("Fetching answer from the provided pdf file")
@@ -210,7 +212,7 @@ if button:
         execute_response()
 
 # Empty the table after session end
-cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
+# cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
 
 # Optionally, display information or instructions
 st.sidebar.title("About this App")
