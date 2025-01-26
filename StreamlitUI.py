@@ -75,13 +75,13 @@ def run_pdf_query(session, question, text):
     cursor = session.cursor()
     
     # Use parameterized queries to prevent SQL injection
-    query1 = f"""
+    query1 = """
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
-        '{text}' AS TEXT_CONTENT,
+        :text_content AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            '{text}'
+            :text_embedding
         ) AS EMBEDDING_VECTOR;
     """
     
@@ -125,7 +125,7 @@ FROM COMBINED_CONTEXT;
 
     try:
         # Execute first query with parameters
-        cursor.execute(query1)
+        cursor.execute(query1, {'text_content': text, 'text_embedding': text})
         # Execute second query with parameters
         cursor.execute(query2)
         # Fetch results
