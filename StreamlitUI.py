@@ -17,7 +17,8 @@ def create_session():
         st.error(f"Failed to connect to Snowflake: {e}")
         return None
 
-
+session = create_session()
+cursor = session.cursor()
 # Function to run query
 def run_query(session, question):
     query = f"""
