@@ -120,7 +120,6 @@ FROM COMBINED_CONTEXT;
 
 """
     cursor = session.cursor()
-    cursor.execute()
     try:
         cursor = session.cursor()
         cursor.query(query1)
