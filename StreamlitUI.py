@@ -215,7 +215,7 @@ if button:
         execute_response()
 
 # Empty the table after session end
-# cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
+cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
 
 # Optionally, display information or instructions
 st.sidebar.title("About this App")
