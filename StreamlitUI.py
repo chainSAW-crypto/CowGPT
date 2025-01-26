@@ -72,22 +72,22 @@ FROM combined_context;
 
 
 def run_pdf_query(question, text):
-    query1 = """
+    query1 = f"""
     INSERT INTO INPUT_PDF_EMBEDDING_STORE (TEXT_CONTENT, EMBEDDING_VECTOR)
     SELECT
-        :text_content AS TEXT_CONTENT,
+        '{text}' AS TEXT_CONTENT,
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
             'snowflake-arctic-embed-m', 
-            :text_embedding
+            '{text}'
         ) AS EMBEDDING_VECTOR;
     """
     
-    query2 = """
+    query2 = f"""
     WITH QUESTION_EMBEDDING AS (
       SELECT
         SNOWFLAKE.CORTEX.EMBED_TEXT_768(
           'snowflake-arctic-embed-m',
-          :question_param
+          '{question}'
         ) AS QUESTION_VECTOR
     ),
    RANKED_TEXT AS (
@@ -112,7 +112,7 @@ SELECT
     CONCAT(
       'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: :question_para',
+      '\nQuestion: {question}',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
@@ -122,15 +122,8 @@ FROM COMBINED_CONTEXT;
     
     try:
         cursor = session.cursor()
-        cursor.execute(query1, {
-            'text_content': text, 
-            'text_embedding': text
-        })
-        
-        cursor.execute(query2, {
-            'question_param': question, 
-            'question_para': question
-        })
+        cursor.execute(query1)  
+        cursor.execute(query2)
         
         result = cursor.fetchall()
         return result[0][0] if result else "No response generated."
