@@ -115,7 +115,7 @@ SELECT
     CONCAT(
       'You are a smart llm with the purpose of resolving user queries. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
-      '\nQuestion: ', '{question}',
+      '\nQuestion: {question}',
       '\nAnswer concisely with bullet points:'
     )
   ) AS ANSWER,
