@@ -121,7 +121,7 @@ SELECT
   ) AS ANSWER,
   (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT) AS SOURCE_MATERIAL
 FROM COMBINED_CONTEXT;
-    """
+"""
 
     try:
         # Execute first query with parameters
