@@ -148,8 +148,7 @@ uploaded_file = st.file_uploader("Choose a document", type=["pdf", "docx"])
 session = create_session()
 cursor = session.cursor()
 
-# Add a button to submit the question
-if button:
+def execute_response():
     if user_question.strip():
         if session:
             with st.spinner("Fetching response..."):
@@ -162,12 +161,9 @@ if button:
                     st.warning("No response generated.")
         else:
             st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
-    else:
-        st.warning("Please enter a valid question.")
 
 
-
-if uploaded_file is not None:
+def execute_from_pdf():
     file_contents = uploaded_file.read()
     pdf_reader = PdfReader(uploaded_file)
 
@@ -189,7 +185,11 @@ if uploaded_file is not None:
                     st.warning("No response generated.")
         else:
             st.error("Unable to connect to Snowflake. Please check your credentials and try again.")
-
+            
+if uploaded_file is not None:
+    execute_from_pdf()
+else:
+    execute_response()
 
 # Empty the table after session end
 cursor.execute("""DELETE FROM input_pdf_embedding_store;""")
