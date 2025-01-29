@@ -125,7 +125,7 @@ SELECT
     'mistral-large2',
     CONCAT(
       'you are a smart llm with the purpose of resolving user queries. You take the provided scientific context from document base into the account and
-Answer the question based on the context. You also provide data-drive insights if available. You Provide answer relevant to provided context only. if context does not match to the question no answer should be provided. Also mention the source documents in the answer and elaborate each point to fulfil user understanding. ',
+build the answer based on the context, You also provide data-drive insights all according to relevancy to to user's question.  Also mention the source documents in the answer and elaborate each point to fulfil user's trust. ',
       'Context: ', (SELECT FULL_CONTEXT FROM COMBINED_CONTEXT),
       '\nQuestion: {clean_question}',
       '\nAnswer concisely with bullet points:'
